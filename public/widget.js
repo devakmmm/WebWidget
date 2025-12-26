@@ -1,15 +1,17 @@
-(function(){
+(function () {
   'use strict';
 
-  function qs(sel, root){ return (root || document).querySelector(sel); }
-  function esc(s){ const d=document.createElement('div'); d.textContent=String(s||''); return d.innerHTML; }
-  function nowTime(ts){ try { return new Date(ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});} catch { return ''; } }
-
   const script = document.currentScript;
-  const site = (script && script.dataset && script.dataset.site) ? script.dataset.site.trim() : 'default';
+  const site =
+    script && script.dataset && script.dataset.site
+      ? script.dataset.site.trim()
+      : 'default';
+
+  // ✅ Use the widget server origin (Render) instead of the host page origin (Netlify)
+  const baseOrigin = script && script.src ? new URL(script.src).origin : window.location.origin;
 
   // inject css
-  const cssHref = new URL('/widget.css', window.location.origin).toString();
+  const cssHref = new URL('/widget.css', baseOrigin).toString();
   const link = document.createElement('link');
   link.rel = 'stylesheet';
   link.href = cssHref;
@@ -70,10 +72,14 @@
   let ws = null;
   let myId = null;
 
-  function wsUrl(){
-    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${proto}//${window.location.host}/?site=${encodeURIComponent(site)}`;
+  function wsUrl() {
+    // ✅ Match WS protocol to the widget server (Render)
+    const httpProto = baseOrigin.startsWith('https:') ? 'wss:' : 'ws:';
+    const host = new URL(baseOrigin).host;
+    return `${httpProto}//${host}/?site=${encodeURIComponent(site)}`;
   }
+
+  
 
   function connect(){
     setDot('connecting');
