@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Widget Test</title>
+  <style>
+    body{ font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 28px; }
+    .card{ max-width: 720px; border:1px solid #ddd; border-radius: 12px; padding: 16px; }
+    code{ background:#f6f6f6; padding:2px 6px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Widget Test Page</h2>
+    <p>This page loads the widget via a script tag. Change <code>data-site</code> to simulate different customers/rooms.</p>
+    <p><strong>Room/site:</strong> <code>demo-site</code></p>
+  </div>
+
+  <script src="/widget.js" data-site="demo-site"></script>
+</body>
+</html>
