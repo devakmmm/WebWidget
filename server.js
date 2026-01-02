@@ -29,6 +29,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/health', (_req, res) => res.status(200).send('ok'));
+app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'demo.html')));
 app.get('/demo', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'demo.html')));
 app.get('/widget-test', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'widget-test.html')));
 app.get('/agent', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'agent-dashboard.html')));
