@@ -376,6 +376,21 @@ wss.on('connection', async (ws, req) => {
   ws.on('error', () => {});
 });
 
+// Self-ping to prevent Render idle timeout (every 14 minutes)
+const RENDER_URL = process.env.RENDER_EXTERNAL_URL || '';
+function keepAlive() {
+  if (!RENDER_URL) return;
+  const https = require('https');
+  const http = require('http');
+  const url = RENDER_URL + '/health';
+  const client = url.startsWith('https') ? https : http;
+  client.get(url, (res) => {
+    console.log('[Keep-Alive] Ping status:', res.statusCode);
+  }).on('error', (err) => {
+    console.error('[Keep-Alive] Ping failed:', err.message);
+  });
+}
+
 (async () => {
   try { await ensureSchema(); } catch (e) { console.error('DB schema init failed:', e.message); }
   server.listen(PORT, () => {
@@ -393,5 +408,12 @@ wss.on('connection', async (ws, req) => {
     console.log('  <script src="http://localhost:' + PORT + '/widget.js"');
     console.log('          data-site="your-business"></script>');
     console.log('='.repeat(60));
+    
+    // Start keep-alive pings every 14 minutes (Render idles after 15 min)
+    if (RENDER_URL) {
+      console.log('  Keep-alive enabled for:', RENDER_URL);
+      setInterval(keepAlive, 14 * 60 * 1000);
+      keepAlive(); // Initial ping
+    }
   });
 })();
