@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support Chat Widget - Business Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --accent: #3b82f6;
+      --accent2: #06b6d4;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    
+    .hero {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: white;
+      padding: 80px 20px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: 20px;
+      opacity: .8;
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,.1);
+      color: white;
+      border: 1px solid rgba(255,255,255,.2);
+    }
+    
+    .section {
+      padding: 80px 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .section-title {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .section-title h2 {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+    .section-title p {
+      color: var(--muted);
+      font-size: 18px;
+    }
+    
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 32px;
+    }
+    .feature {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.05);
+      border: 1px solid #e2e8f0;
+    }
+    .feature-icon {
+      font-size: 40px;
+      margin-bottom: 16px;
+    }
+    .feature h3 {
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+    .feature p {
+      color: var(--muted);
+    }
+    
+    .how-it-works {
+      background: #1e293b;
+      color: white;
+    }
+    .how-it-works .section-title p { color: rgba(255,255,255,.6); }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 32px;
+    }
+    .step {
+      text-align: center;
+      padding: 24px;
+    }
+    .step-number {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 auto 16px;
+    }
+    .step h4 { font-size: 18px; margin-bottom: 8px; }
+    .step p { color: rgba(255,255,255,.6); font-size: 14px; }
+    
+    .code-section {
+      background: #0f172a;
+      color: white;
+      padding: 40px 20px;
+    }
+    .code-section h3 {
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 24px;
+    }
+    .code-block {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 700px;
+      margin: 0 auto;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 14px;
+      overflow-x: auto;
+    }
+    .code-block .comment { color: #64748b; }
+    .code-block .tag { color: #f472b6; }
+    .code-block .attr { color: #a5b4fc; }
+    .code-block .string { color: #4ade80; }
+    
+    .cta {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      text-align: center;
+      padding: 80px 20px;
+    }
+    .cta h2 { font-size: 36px; margin-bottom: 16px; }
+    .cta p { font-size: 18px; opacity: .9; margin-bottom: 32px; }
+    .cta .btn {
+      background: white;
+      color: var(--accent);
+    }
+    
+    .demo-badge {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,.8);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      z-index: 1000;
+    }
+    .demo-badge a { color: #4ade80; text-decoration: none; }
+    .demo-badge a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="demo-badge">
+    🎮 Demo Mode | <a href="/agent">Open Agent Dashboard</a>
+  </div>
+
+  <div class="hero">
+    <h1>💬 Support Chat Widget</h1>
+    <p>Add a smart chatbot + live agent support to any website in under 5 minutes. Perfect for small businesses.</p>
+    <div class="hero-buttons">
+      <a href="/agent" class="btn btn-primary">👨‍💼 Agent Dashboard</a>
+      <a href="#embed" class="btn btn-secondary">📦 Get Embed Code</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">
+      <h2>Why Choose Our Widget?</h2>
+      <p>Everything you need to provide excellent customer support</p>
+    </div>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🤖</div>
+        <h3>Smart Bot First</h3>
+        <p>AI-powered bot handles common questions instantly, reducing agent workload by 70%.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">👨‍💼</div>
+        <h3>Seamless Handoff</h3>
+        <p>Complex issues are automatically escalated to human agents with full context.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📱</div>
+        <h3>Mobile Friendly</h3>
+        <p>Beautiful responsive design that works perfectly on any device.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <h3>Real-Time</h3>
+        <p>WebSocket-powered for instant message delivery. No delays, no refreshing.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🎨</div>
+        <h3>Customizable</h3>
+        <p>Match your brand colors and configure departments for your business.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📊</div>
+        <h3>Customer Insights</h3>
+        <p>Collect emails, categorize issues, and understand customer needs.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="how-it-works">
+    <div class="section">
+      <div class="section-title">
+        <h2>How It Works</h2>
+        <p>Like UberEats support — but for your business</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h4>Customer Opens Chat</h4>
+          <p>Visitors click the chat bubble and enter their details</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h4>Bot Helps First</h4>
+          <p>Smart bot provides instant answers to common questions</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h4>Escalate if Needed</h4>
+          <p>Complex issues are routed to the right agent</p>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <h4>Agent Responds</h4>
+          <p>Your team helps via the agent dashboard</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-section" id="embed">
+    <h3>📦 Embed on Your Website</h3>
+    <div class="code-block">
+      <span class="comment">&lt;!-- Add this before &lt;/body&gt; --&gt;</span><br>
+      <span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="string">"https://your-server.com/widget.js"</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="attr">data-site</span>=<span class="string">"your-business-name"</span><span class="tag">&gt;&lt;/script&gt;</span>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h2>Ready to Improve Your Support?</h2>
+    <p>Start helping customers better, today.</p>
+    <a href="/agent" class="btn">Open Agent Dashboard →</a>
+  </div>
+
+  <!-- The chat widget loads here -->
+  <script src="/widget.js" data-site="demo"></script>
+</body>
+</html>
