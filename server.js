@@ -133,6 +133,14 @@ function roomFor(site) {
 
 const BOT = { id: 0, name: 'Support Bot', isBot: true };
 
+// Quick reply options for the bot
+const QUICK_REPLIES = [
+  { id: 'order', label: '📦 Order Issues', text: 'I have a question about my order' },
+  { id: 'billing', label: '💳 Billing & Payments', text: 'I need help with billing' },
+  { id: 'technical', label: '🔧 Technical Support', text: 'I have a technical problem' },
+  { id: 'agent', label: '👨‍💼 Talk to Agent', text: 'I want to speak with an agent' }
+];
+
 function hasAvailableAgent(room) { return room.agents.size > 0; }
 
 function broadcastRoom(room, obj) {
@@ -197,8 +205,28 @@ function botChat(room, site, visitorId, body) {
   broadcastToConversation(room, visitorId, payload);
 }
 
+function wantsAgent(text) {
+  const lower = text.toLowerCase();
+  const agentKeywords = ['agent', 'connect', 'human', 'person', 'representative', 'speak to someone', 'talk to someone', 'real person', 'live agent', 'customer service'];
+  return agentKeywords.some(kw => lower.includes(kw));
+}
+
 function handleBotMessage(room, site, visitorId, text, conversation) {
   const config = getBusinessConfig(site);
+  
+  // Check if user wants to connect to an agent
+  if (wantsAgent(text)) {
+    conversation.status = 'waiting';
+    broadcastAgents(room, { type: 'escalation', visitorId, conversation: { ...conversation }, ts: nowISO(), site });
+    setTimeout(() => {
+      const agentMsg = hasAvailableAgent(room) 
+        ? "Connecting you to a live agent now. Please hold..." 
+        : "All agents are currently busy. Your message has been queued and an agent will respond as soon as possible.";
+      botChat(room, site, visitorId, agentMsg);
+    }, 600);
+    return;
+  }
+  
   const category = detectCategory(text, config.faq);
   
   if (category !== 'general' && conversation.category === 'general') {
@@ -326,7 +354,14 @@ wss.on('connection', async (ws, req) => {
     send(ws, { type: 'welcome', you: client, agentAvailable: hasAvailableAgent(room), config: { welcomeMessage: config.welcomeMessage, departments: config.departments, businessName: config.name }, history, ts: nowISO(), site });
     
     broadcastAgents(room, { type: 'new_visitor', visitor: client, conversation: room.conversations.get(id), ts: nowISO(), site });
-    setTimeout(() => botChat(room, site, id, config.welcomeMessage), 500);
+    setTimeout(() => {
+      botChat(room, site, id, config.welcomeMessage);
+      // Send quick reply options after welcome
+      setTimeout(() => {
+        const quickReplyPayload = { type: 'quick_replies', options: QUICK_REPLIES, ts: nowISO(), site, visitorId: id };
+        broadcastToConversation(room, id, quickReplyPayload, false);
+      }, 800);
+    }, 500);
     
     ws.on('message', async (raw) => {
       const msg = safeJsonParse(raw.toString());

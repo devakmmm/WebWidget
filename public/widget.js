@@ -85,7 +85,29 @@
     div.innerHTML = (!isMine ? avatar : '') + '<div class="wsx-msg-content"><div class="wsx-meta"><span class="wsx-name">' + esc(msg.from?.name || 'Unknown') + '</span><span>' + esc(nowTime(msg.ts)) + '</span></div><div class="wsx-bub">' + esc(msg.body || '') + '</div></div>';
     body.appendChild(div);
   }
-
+  function addQuickReplies(options) {
+    // Remove any existing quick replies
+    const existing = body.querySelector('.wsx-quick-replies');
+    if (existing) existing.remove();
+    
+    const div = document.createElement('div');
+    div.className = 'wsx-quick-replies';
+    div.innerHTML = options.map(opt => 
+      '<button class="wsx-quick-btn" data-text="' + esc(opt.text) + '">' + opt.label + '</button>'
+    ).join('');
+    body.appendChild(div);
+    
+    // Add click handlers
+    div.querySelectorAll('.wsx-quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const text = btn.dataset.text;
+        if (!ws || ws.readyState !== WebSocket.OPEN) { showToast('Not connected'); return; }
+        ws.send(JSON.stringify({ type: 'chat', body: text }));
+        div.remove(); // Remove quick replies after selection
+      });
+    });
+    scrollDown();
+  }
   function populateDepartments(departments) {
     deptSelect.innerHTML = '<option value="">Select a topic...</option>';
     departments.forEach(dept => { const opt = document.createElement('option'); opt.value = dept; opt.textContent = dept; deptSelect.appendChild(opt); });
@@ -111,8 +133,14 @@
         body.innerHTML = ''; msg.history?.forEach(addChatMessage); scrollDown();
       }
       if (msg.type === 'chat') {
+        // Remove quick replies when a message is sent/received
+        const qr = body.querySelector('.wsx-quick-replies');
+        if (qr) qr.remove();
         if (msg.from?.isBot) showTyping();
         setTimeout(() => { addChatMessage(msg); scrollDown(); }, msg.from?.isBot ? 500 : 0);
+      }
+      if (msg.type === 'quick_replies') {
+        setTimeout(() => { addQuickReplies(msg.options); }, 600);
       }
       if (msg.type === 'info_received') showChatArea();
       if (msg.type === 'agent_status') {
