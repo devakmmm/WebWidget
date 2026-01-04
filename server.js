@@ -242,16 +242,34 @@ function handleBotMessage(room, site, visitorId, text, conversation) {
       if (shouldEscalate) {
         conversation.status = 'waiting';
         setTimeout(() => {
-          botChat(room, site, visitorId, "I've notified our support team. An agent will be with you shortly.");
-          broadcastAgents(room, { type: 'escalation', visitorId, conversation: { ...conversation }, ts: nowISO(), site });
+          if (!hasAvailableAgent(room)) {
+            botChat(
+              room,
+              site,
+              visitorId,
+              "Mr Mehta is not available at the moment. Please contact him on the following:\nLinkedIn: http://www.linkedin.com/in/devak-mehta\nEmail: mdevak44@gmail.com"
+            );
+          } else {
+            botChat(room, site, visitorId, "I've notified our support team. An agent will be with you shortly.");
+            broadcastAgents(room, { type: 'escalation', visitorId, conversation: { ...conversation }, ts: nowISO(), site });
+          }
         }, 1000);
       }
     }, 800);
   } else {
     // Bot doesn't understand, escalate to agent
     conversation.status = 'waiting';
-    botChat(room, site, visitorId, "Let me connect you to an agent.");
-    broadcastAgents(room, { type: 'escalation', visitorId, conversation: { ...conversation }, ts: nowISO(), site });
+    if (!hasAvailableAgent(room)) {
+      botChat(
+        room,
+        site,
+        visitorId,
+        "Mr Mehta is not available at the moment. Please contact him on the following:\nLinkedIn: http://www.linkedin.com/in/devak-mehta\nEmail: mdevak44@gmail.com"
+      );
+    } else {
+      botChat(room, site, visitorId, "Let me connect you to an agent.");
+      broadcastAgents(room, { type: 'escalation', visitorId, conversation: { ...conversation }, ts: nowISO(), site });
+    }
   }
 }
 
