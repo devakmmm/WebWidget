@@ -368,10 +368,15 @@ wss.on('connection', async (ws, req) => {
       if (!msg) return;
       
       if (msg.type === 'chat_opened') {
-        // Send notification email when chat is opened
+        // Debug: Log chat_opened event
+        console.log('[DEBUG] chat_opened event received for site:', site, 'id:', id);
+        const conversation = room.conversations.get(id);
         try {
           await maybeNotifyOwner(site, '[Chat Opened] A visitor has opened the chat widget.', conversation?.customerInfo);
-        } catch (e) { console.error('Failed to notify owner on chat open:', e); }
+          console.log('[DEBUG] maybeNotifyOwner called for chat_opened event');
+        } catch (e) {
+          console.error('Failed to notify owner on chat open:', e);
+        }
       }
       if (msg.type === 'set_customer_info') {
         const conversation = room.conversations.get(id);
