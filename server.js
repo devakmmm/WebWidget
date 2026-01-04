@@ -327,11 +327,16 @@ wss.on('connection', async (ws, req) => {
         const conversation = room.conversations.get(visitorId);
         // Only allow agent to join if status is 'waiting'
         if (conversation && conversation.status === 'waiting') {
+          // Bot sends transfer message first
+          botChat(room, site, visitorId, "You are being transferred to an agent...");
           conversation.status = 'active';
           conversation.assignedAgent = agent.id;
-          const payload = { type: 'chat', from: { id: agent.id, name: agent.name, isAgent: true }, body, ts: nowISO(), site, visitorId };
-          broadcastToConversation(room, visitorId, payload);
-          await saveMessage(site, payload.from, payload.body, payload.ts, visitorId);
+          // Delay agent message slightly so bot message appears first
+          setTimeout(async () => {
+            const payload = { type: 'chat', from: { id: agent.id, name: agent.name, isAgent: true }, body, ts: nowISO(), site, visitorId };
+            broadcastToConversation(room, visitorId, payload);
+            await saveMessage(site, payload.from, payload.body, payload.ts, visitorId);
+          }, 500);
         }
       }
       
