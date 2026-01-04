@@ -152,9 +152,17 @@
     ws.onerror = () => { setDot('error'); status.textContent = 'Connection error'; };
   }
 
+  let chatOpenedSent = false;
   bubble.addEventListener('pointerdown', (e) => {
     e.preventDefault(); e.stopPropagation(); panel.classList.toggle('wsx-hidden');
-    if (!panel.classList.contains('wsx-hidden')) (customerInfo ? input : nameInput).focus();
+    if (!panel.classList.contains('wsx-hidden')) {
+      (customerInfo ? input : nameInput).focus();
+      // Send chat_opened event to backend only once per page load
+      if (!chatOpenedSent && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'chat_opened' }));
+        chatOpenedSent = true;
+      }
+    }
   });
 
   closeBtn.addEventListener('click', () => panel.classList.add('wsx-hidden'));
