@@ -62,10 +62,15 @@
   const closeBtn = qs('.wsx-close', panel), form = qs('#wsxForm', panel), input = qs('#wsxIn', panel);
   const toast = qs('#wsxToast', panel), typing = qs('#wsxTyping', panel), prechat = qs('#wsxPrechat', panel);
   const chatArea = qs('#wsxChatArea', panel), prechatForm = qs('#wsxPrechatForm', panel);
+  // Create connecting loader
+  const connectingDiv = document.createElement('div');
+  connectingDiv.className = 'wsx-connecting wsx-hidden';
+  connectingDiv.innerHTML = '<div class="wsx-connecting-spinner"></div><div>Connecting to agent…</div>';
+  chatArea.appendChild(connectingDiv);
   const nameInput = qs('#wsxName', panel), emailInput = qs('#wsxEmail', panel), deptSelect = qs('#wsxDept', panel);
   const requestAgentBtn = qs('#wsxRequestAgent', panel);
 
-  let ws = null, myId = null, customerInfo = null, agentAvailable = false, config = {};
+  let ws = null, myId = null, customerInfo = null, agentAvailable = false, config = {}, conversationStatus = null;
 
   function setDot(state) {
     const colors = { connected: ['#22c55e', 'rgba(34,197,94,.55)'], error: ['#ef4444', 'rgba(239,68,68,.55)'], connecting: ['#f59e0b', 'rgba(245,158,11,.55)'] };
@@ -114,6 +119,16 @@
   }
 
   function showChatArea() { prechat.classList.add('wsx-hidden'); chatArea.classList.remove('wsx-hidden'); }
+  function setConnecting(state, msg) {
+    if (state) {
+      connectingDiv.classList.remove('wsx-hidden');
+      form.classList.add('wsx-hidden');
+      if (msg) connectingDiv.querySelector('div:last-child').textContent = msg;
+    } else {
+      connectingDiv.classList.add('wsx-hidden');
+      form.classList.remove('wsx-hidden');
+    }
+  }
 
   function wsUrl() {
     const proto = baseOrigin.startsWith('https') ? 'wss:' : 'ws:';
@@ -130,13 +145,46 @@
         myId = msg.you?.id; agentAvailable = msg.agentAvailable; config = msg.config || {};
         if (config.departments) populateDepartments(config.departments);
         requestAgentBtn.style.display = agentAvailable ? 'block' : 'none';
-        body.innerHTML = ''; msg.history?.forEach(addChatMessage); scrollDown();
+        body.innerHTML = '';
+        msg.history?.forEach(m => {
+          addChatMessage(m);
+          // If any message is from bot and escalates, set connecting
+          if (m.from?.isBot && m.body && m.body.toLowerCase().includes('connect you to an agent')) {
+            setConnecting(true);
+            conversationStatus = 'waiting';
+          }
+          if (m.from?.isAgent) {
+            setConnecting(false);
+            conversationStatus = 'active';
+          }
+        });
+        scrollDown();
       }
       if (msg.type === 'chat') {
         // Remove quick replies when a message is sent/received
         const qr = body.querySelector('.wsx-quick-replies');
         if (qr) qr.remove();
         if (msg.from?.isBot) showTyping();
+        // If bot says connecting to agent, show loader
+        if (msg.body && msg.body.toLowerCase().includes('connect you to an agent')) {
+          setConnecting(true);
+          conversationStatus = 'waiting';
+        }
+        // If agent sends a message, hide loader
+        if (msg.from && msg.from.isAgent) {
+          setConnecting(false);
+          conversationStatus = 'active';
+        }
+        // If bot says no agents available
+        if (msg.body && msg.body.toLowerCase().includes('no agents available')) {
+          setConnecting(true, 'No agents are currently available. Please wait…');
+          conversationStatus = 'waiting';
+        }
+        // If bot says resolved or ended
+        if (msg.body && (msg.body.toLowerCase().includes('resolved') || msg.body.toLowerCase().includes('ended'))) {
+          setConnecting(false);
+          conversationStatus = 'resolved';
+        }
         setTimeout(() => { addChatMessage(msg); scrollDown(); }, msg.from?.isBot ? 500 : 0);
       }
       if (msg.type === 'quick_replies') {
@@ -145,8 +193,19 @@
       if (msg.type === 'info_received') showChatArea();
       if (msg.type === 'agent_status') {
         agentAvailable = msg.available; requestAgentBtn.style.display = agentAvailable ? 'block' : 'none';
+        if (msg.available && conversationStatus === 'waiting') {
+          setConnecting(true, 'Connecting to agent…');
+        }
         if (msg.available) showToast('An agent is now available!');
       }
+      // Add minimal CSS for loader
+      const style = document.createElement('style');
+      style.textContent = `
+        .wsx-connecting { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 0; color: #555; font-size: 1.1em; }
+        .wsx-connecting-spinner { width: 32px; height: 32px; border: 4px solid #eee; border-top: 4px solid #22c55e; border-radius: 50%; animation: wsx-spin 1s linear infinite; margin-bottom: 12px; }
+        @keyframes wsx-spin { 100% { transform: rotate(360deg); } }
+      `;
+      document.head.appendChild(style);
     };
     ws.onclose = () => { setDot('connecting'); status.textContent = 'Reconnecting…'; setTimeout(connect, 2000); };
     ws.onerror = () => { setDot('error'); status.textContent = 'Connection error'; };
@@ -165,7 +224,11 @@
     }
   });
 
-  closeBtn.addEventListener('click', () => panel.classList.add('wsx-hidden'));
+  closeBtn.addEventListener('click', () => {
+    panel.classList.add('wsx-hidden');
+    setConnecting(false);
+    conversationStatus = null;
+  });
 
   prechatForm.addEventListener('submit', (e) => {
     e.preventDefault();

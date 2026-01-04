@@ -239,7 +239,7 @@ function handleBotMessage(room, site, visitorId, text, conversation) {
   if (response) {
     setTimeout(() => {
       botChat(room, site, visitorId, response);
-      if (shouldEscalate && hasAvailableAgent(room)) {
+      if (shouldEscalate) {
         conversation.status = 'waiting';
         setTimeout(() => {
           botChat(room, site, visitorId, "I've notified our support team. An agent will be with you shortly.");
@@ -247,8 +247,11 @@ function handleBotMessage(room, site, visitorId, text, conversation) {
         }, 1000);
       }
     }, 800);
-  } else if (!hasAvailableAgent(room)) {
-    setTimeout(() => botChat(room, site, visitorId, config.offlineMessage), 800);
+  } else {
+    // Bot doesn't understand, escalate to agent
+    conversation.status = 'waiting';
+    botChat(room, site, visitorId, "Let me connect you to an agent.");
+    broadcastAgents(room, { type: 'escalation', visitorId, conversation: { ...conversation }, ts: nowISO(), site });
   }
 }
 
@@ -321,13 +324,15 @@ wss.on('connection', async (ws, req) => {
         const body = String(msg.body || '').trim().slice(0, 2000);
         const visitorId = msg.visitorId;
         if (!body || !visitorId) return;
-        
         const conversation = room.conversations.get(visitorId);
-        if (conversation) { conversation.status = 'active'; conversation.assignedAgent = agent.id; }
-        
-        const payload = { type: 'chat', from: { id: agent.id, name: agent.name, isAgent: true }, body, ts: nowISO(), site, visitorId };
-        broadcastToConversation(room, visitorId, payload);
-        await saveMessage(site, payload.from, payload.body, payload.ts, visitorId);
+        // Only allow agent to join if status is 'waiting'
+        if (conversation && conversation.status === 'waiting') {
+          conversation.status = 'active';
+          conversation.assignedAgent = agent.id;
+          const payload = { type: 'chat', from: { id: agent.id, name: agent.name, isAgent: true }, body, ts: nowISO(), site, visitorId };
+          broadcastToConversation(room, visitorId, payload);
+          await saveMessage(site, payload.from, payload.body, payload.ts, visitorId);
+        }
       }
       
       if (msg.type === 'resolve_conversation') {
